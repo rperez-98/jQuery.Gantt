@@ -175,6 +175,9 @@
             scale: "days",
             maxScale: "months",
             minScale: "hours",
+            /* Rperez 25/10/2019: Añadimos dos opciones nuevas */
+            draggable: false,
+            resize: false,
             // callbacks
             onItemClick: function (data) { return; },
             onAddClick: function (dt, rowId) { return; },
@@ -256,6 +259,8 @@
                 content.append(core.navigation(element));
 
                 var $dataPanel = $rightPanel.find(".dataPanel");
+                /* Rperez 25/10/2019: Añadimos un div que contiene todas las barras */
+                var $dataPanelData = $('<div class="dataPanelData"/>');
 
                 element.gantt = $('<div class="fn-gantt" />').append(content);
 
@@ -267,7 +272,8 @@
                 element.scrollNavigation.canScroll = ($dataPanel.width() > $rightPanel.width());
 
                 core.markNow(element);
-                core.fillData(element, $dataPanel, $leftPanel);
+                /* Rperez 25/10/2019: Añadimos el div credo anteriormente para que inserte las barras dentro de el */
+                core.fillData(element, $dataPanel, $leftPanel, $dataPanelData);
 
                 // Set a cookie to record current position in the view
                 if (settings.useCookie) {
@@ -299,6 +305,17 @@
                 $dataPanel.css({ height: $leftPanel.height() });
                 core.waitToggle(element);
                 settings.onRender();
+
+                $.each($dataPanelData.find('.bar'), function(){
+                    if (settings.draggable) {
+                        tools.makeBarDraggable($(this))
+                    }
+
+                    if (settings.resize) {
+                        tools.makeBarResizable($(this))
+                    }
+                });
+
             },
 
             // Create and return the left panel with labels
@@ -691,7 +708,7 @@
                 default:
                     range = tools.parseDateRange(element.dateStart, element.dateEnd);
                     dataPanelWidth = range.length * tools.getCellSize();
-                    
+
                     year = range[0].getFullYear();
                     month = range[0].getMonth();
 
@@ -1002,10 +1019,14 @@
 
             // **Fill the Chart**
             // Parse the data and fill the data panel
-            fillData: function (element, datapanel, leftpanel /* <- never used? */) {
+            fillData: function (element, datapanel, leftpanel /* <- never used? */, datapaneldata) {
                 var cellWidth = tools.getCellSize();
                 var barOffset = (cellWidth - 18) / 2;
                 var dataPanelWidth = datapanel.width();
+
+                /* Rperez 25/10/2019: Metemos el div que contendrá las barras dentro del data panel */
+                datapanel.append(datapaneldata);
+
                 var invertColor = function (colStr) {
                     try {
                         colStr = colStr.replace("rgb(", "").replace(")", "");
@@ -1039,7 +1060,7 @@
                                 cTo = to.data("offset");
                                 dl = Math.floor((cTo - cFrom) / cellWidth) + 1;
                                 dp = 100 * (cellWidth * dl - 1) / dataPanelWidth;
-                                
+
                                 _bar = core.createProgressBar(day.label, day.desc, day.customClass, day.dataObj);
 
                                 // find row
@@ -1051,7 +1072,8 @@
                                   width: dp + '%'
                                 });
 
-                                datapanel.append(_bar);
+                                /* Rperez 25/10/2019: Cambiamos donde van a ser insertadas las barras */
+                                datapaneldata.append(_bar);
                                 break;
 
                             // **Weekly data**
@@ -1077,7 +1099,8 @@
                                   width: dp + '%'
                                 });
 
-                                datapanel.append(_bar);
+                                /* Rperez 25/10/2019: Cambiamos donde van a ser insertadas las barras */
+                                datapaneldata.append(_bar);
                                 break;
 
                             // **Monthly data**
@@ -1115,7 +1138,8 @@
                                   width: dp + '%'
                                 });
 
-                                datapanel.append(_bar);
+                                /* Rperez 25/10/2019: Cambiamos donde van a ser insertadas las barras */
+                                datapaneldata.append(_bar);
                                 break;
 
                             // **Days**
@@ -1140,7 +1164,8 @@
                                   width: dp + '%'
                                 });
 
-                                datapanel.append(_bar);
+                                /* Rperez 25/10/2019: Cambiamos donde van a ser insertadas las barras */
+                                datapaneldata.append(_bar);
                             }
 
                             var $l = _bar.find(".fn-label");
@@ -1151,6 +1176,18 @@
                         });
 
                     }
+                });
+
+                /* Rperez 25/10/2019: Calculamos el alto y el ancho del contenedor de las barras */
+                var height = 0;
+                $.each($('.row.header'), function () {
+                    height += this.clientHeight;
+                });
+
+                datapaneldata.css({
+                    'float': 'left',
+                    'height': 'calc(100% - ' + height + 'px)',
+                    'width': '100%',
                 });
             },
             // **Navigation**
@@ -1571,6 +1608,29 @@
                 return new Date( date );
             },
 
+            /* Rperez 25/10/2019: Función que hace las barras draggables */
+            makeBarDraggable: function (element) {
+                element.draggable({
+                    containment: 'parent',
+                    start: function (event, ui) {
+                        $(this).data("startx", $(this).css('left').split("px")[0]);
+                        $(this).data("starty", $(this).css('top').split("px")[0]);
+                    },
+                    stop: function (event, ui) {
+                        var left = parseInt($(this).css('left').split("px")[0]);
+                        var changex = left - parseInt($(this).data("startx"));
+                        var top = parseInt($(this).css('top').split("px")[0]);
+                        top -= top % 24;
+                        $(this).css('top', top);
+                        var changey = top - parseInt($(this).data("starty"));
+                    }
+                });
+            },
+
+            /* Rperez 25/10/2019: Función que hace a las barras resizables */
+            makeBarResizable: function (element) {
+                element.resizable({ handles: 'e, w' });
+            },
             // Generate an id for a date
             genId: function (t) { // varargs
                 if ( $.isNumeric(t) ) {
