@@ -1,6 +1,6 @@
 {
   "name": "rperez_jquery.gantt",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Jquery package for gantt plugin",
   "main": "index.js",
   "scripts": {
