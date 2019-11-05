@@ -1621,6 +1621,7 @@
                         var changex = left - parseInt($(this).data("startx"));
                         var top = parseInt($(this).css('top').split("px")[0]);
                         top -= top % 24;
+                        top += 3;
                         $(this).css('top', top);
                         var changey = top - parseInt($(this).data("starty"));
                     }
