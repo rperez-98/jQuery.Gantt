@@ -182,8 +182,8 @@
             onItemClick: function (data) { return; },
             onAddClick: function (dt, rowId) { return; },
             /* Rperez 06/11/2019: Añadimos dos funciones nuevas */
-            onDragEnd: function (element) { return; },
-            onResizeEnd: function (element) { return; },
+            onDragEnd: function (element, from, to) { return; },
+            onResizeEnd: function (element, from, to) { return; },
             onRender: $.noop
         };
 
@@ -1627,7 +1627,17 @@
                         top += 3;
                         $(this).css('top', top);
                         var changey = top - parseInt($(this).data("starty"));
-                        settings.onDragEnd($(this));
+
+                        /* Rperez 06/11/2019: Ajustamos la barra a los anchos definidos (ancho de la izquierda) */
+                        var from_offset = tools.getNearOffset(parseInt($(this).css('left')));
+                        $(this).css('left', from_offset + 'px');
+
+                        /* Rperez 06/11/2019: Ajustamos la barra a los anchos definidos (ancho de la derecha) */
+                        var to_offset = tools.getNearOffset(parseInt($(this).css('left')) + parseInt($(this).css('width')));
+                        $(this).css('width', (to_offset - parseInt($(this).css('left'))) + 'px');
+
+                        var dates = tools.getBarDates($(this));
+                        settings.onDragEnd($(this), tools.dateDeserialize(dates.from), tools.dateDeserialize(dates.to));
                     }
                 });
             },
@@ -1637,9 +1647,41 @@
                 element.resizable({
                     handles: 'e, w',
                     stop: function (event, ui) {
-                        settings.onResizeEnd($(this));
+                        /* Rperez 06/11/2019: Ajustamos la barra a los anchos definidos (ancho de la izquierda) */
+                        if (ui.originalPosition.left != ui.position.left) {
+                            var from_offset = tools.getNearOffset(parseInt($(this).css('left')));
+                            $(this).css('left', from_offset + 'px');
+                        }
+
+                        /* Rperez 06/11/2019: Ajustamos la barra a los anchos definidos (ancho de la derecha) */
+                        if (ui.originalSize.width != ui.size.width) {
+                            var to_offset = tools.getNearOffset(parseInt($(this).css('left')) + parseInt($(this).css('width')));
+                            $(this).css('width', (to_offset - parseInt($(this).css('left'))) + 'px');
+                        }
+
+                        var dates = tools.getBarDates($(this));
+                        settings.onResizeEnd($(this), tools.dateDeserialize(dates.from), tools.dateDeserialize(dates.to));
                     }
                 });
+            },
+            /* Rperez 06/11/2019: Get the nearest offset */
+            getNearOffset: function(curr_offset) {
+                var offsets = $.map($('.row.day[data-offset]'), function(curr_element) {
+                    return curr_element.dataset.offset;
+                });
+
+                return offsets.reduce(function(prev, curr){
+                    return Math.abs(curr - curr_offset) < Math.abs(prev - curr_offset) ? curr : prev;
+                });
+            },
+            /* Rperez 06/11/2019: Get Bar Dates */
+            getBarDates: function(element) {
+                var from_offset = parseInt(element.css('left'));
+                var to_offset = from_offset + parseInt(element.css('width'));
+                var from_date = $('.row.day[data-offset="' + from_offset + '"]').data('repdate');
+                var to_date = $('.row.day[data-offset="' + to_offset + '"]').data('repdate');
+
+                return {'from': from_date, 'to': to_date};
             },
             // Generate an id for a date
             genId: function (t) { // varargs
