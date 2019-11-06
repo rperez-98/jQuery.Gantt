@@ -181,6 +181,9 @@
             // callbacks
             onItemClick: function (data) { return; },
             onAddClick: function (dt, rowId) { return; },
+            /* Rperez 06/11/2019: Añadimos dos funciones nuevas */
+            onDragEnd: function () { return; },
+            onResizeEnd: function () { return; },
             onRender: $.noop
         };
 
@@ -1624,13 +1627,19 @@
                         top += 3;
                         $(this).css('top', top);
                         var changey = top - parseInt($(this).data("starty"));
+                        settings.onDragEnd();
                     }
                 });
             },
 
             /* Rperez 25/10/2019: Función que hace a las barras resizables */
             makeBarResizable: function (element) {
-                element.resizable({ handles: 'e, w' });
+                element.resizable({
+                    handles: 'e, w',
+                    stop: function (event, ui) {
+                        settings.onResizeEnd();
+                    }
+                });
             },
             // Generate an id for a date
             genId: function (t) { // varargs
