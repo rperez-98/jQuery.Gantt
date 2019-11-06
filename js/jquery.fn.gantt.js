@@ -182,8 +182,8 @@
             onItemClick: function (data) { return; },
             onAddClick: function (dt, rowId) { return; },
             /* Rperez 06/11/2019: Añadimos dos funciones nuevas */
-            onDragEnd: function () { return; },
-            onResizeEnd: function () { return; },
+            onDragEnd: function (element) { return; },
+            onResizeEnd: function (element) { return; },
             onRender: $.noop
         };
 
@@ -1627,7 +1627,7 @@
                         top += 3;
                         $(this).css('top', top);
                         var changey = top - parseInt($(this).data("starty"));
-                        settings.onDragEnd();
+                        settings.onDragEnd($(this));
                     }
                 });
             },
@@ -1637,7 +1637,7 @@
                 element.resizable({
                     handles: 'e, w',
                     stop: function (event, ui) {
-                        settings.onResizeEnd();
+                        settings.onResizeEnd($(this));
                     }
                 });
             },
